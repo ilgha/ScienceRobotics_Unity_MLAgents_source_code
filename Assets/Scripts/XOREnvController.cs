@@ -9,7 +9,7 @@ public class XOREnvController : MonoBehaviour
     public Light lightspot; // Assign the Light GameObject in the Inspector
     public int numberOfAgents = 10; // Number of agents to instantiate
     public Vector3 spawnAreaCenter = Vector3.zero; // Center of the spawn area
-    public Vector3 spawnAreaSize = new Vector3(50f, 0f, 50f); // Size of the spawn area
+    public Vector3 spawnAreaSize = new Vector3(24f, 0f, 24f); // Size of the spawn area
 
     public List<GameObject> blackPatches; // List of black patches in the environment
     public int MaxEnvironmentSteps = 1800; // Fixed episode length
@@ -18,9 +18,8 @@ public class XOREnvController : MonoBehaviour
     private int simCounter;
     private SimpleMultiAgentGroup agentGroup;
     private List<Epuck> agentsList = new List<Epuck>();
-    private float cumulReward = 0;
 
-    private float arenaRadius = 12f; // Radius of the dodecagonal arena
+    private float arenaRadius = 8f; // Radius of the dodecagonal arena
 
     void Start()
     {
@@ -55,12 +54,10 @@ public class XOREnvController : MonoBehaviour
 
         // Assign the group reward
         agentGroup.AddGroupReward(reward);
-        cumulReward += reward;
 
         // End episode if max steps are reached
         if (stepCounter >= MaxEnvironmentSteps)
         {
-            Debug.Log($"Reward: " + cumulReward);
             agentGroup.GroupEpisodeInterrupted();
             ResetEnvironment();
             simCounter++;
@@ -70,7 +67,6 @@ public class XOREnvController : MonoBehaviour
     void ResetEnvironment()
     {
         stepCounter = 0;
-        cumulReward = 0;
 
         // Reset agents
         foreach (var agent in agentsList)

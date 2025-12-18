@@ -20,6 +20,8 @@ public class HomingEnvController : MonoBehaviour
     private int simCounter;
     private SimpleMultiAgentGroup agentGroup;
     private List<Epuck> agentsList = new List<Epuck>();
+    private float cumulReward = 0;
+
     private float arenaRadius = 8f; // Radius of the dodecagonal arena
 
     void Start()
@@ -59,7 +61,6 @@ public class HomingEnvController : MonoBehaviour
         if (stepCounter >= MaxEnvironmentSteps)
         {
             int robotsInPatch = CountRobotsInPatch();
-            Debug.Log($"Reward: " + robotsInPatch);
             agentGroup.AddGroupReward(robotsInPatch);
             agentGroup.GroupEpisodeInterrupted();
             ResetEnvironment();
@@ -70,6 +71,7 @@ public class HomingEnvController : MonoBehaviour
     void ResetEnvironment()
     {
         stepCounter = 0;
+        cumulReward = 0;
 
         // Reset agents
         foreach (var agent in agentsList)

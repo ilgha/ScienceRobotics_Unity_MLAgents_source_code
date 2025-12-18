@@ -208,7 +208,7 @@ public class EpuckOld : Agent
             //  A = turn left, D = turn right
             float forward = 0f;
             float turn = 0f;
-            if (Input.GetKey(KeyCode.Z)) forward = 1f;
+            if (Input.GetKey(KeyCode.W)) forward = 1f;
             if (Input.GetKey(KeyCode.S)) forward = -1f;
             if (Input.GetKey(KeyCode.A)) turn = -1f;
             if (Input.GetKey(KeyCode.D)) turn = 1f;

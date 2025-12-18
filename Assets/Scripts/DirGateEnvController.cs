@@ -28,7 +28,6 @@ public class DirectionalGateEnvController : MonoBehaviour
     private Vector3 corridorSize;
     private Vector3 gateCenter;
     private Vector3 gateSize;
-    private float arenaRadius = 12f; // Radius of the dodecagonal arena
 
     void Start()
     {
@@ -52,6 +51,30 @@ public class DirectionalGateEnvController : MonoBehaviour
             agent.lightSource = lightspot;
             agentsList.Add(agent);
             agentGroup.RegisterAgent(agent);
+
+            var s5 = agentObj.GetComponent<PerAgentState5DSensor>();
+            if (s5 == null)
+            {
+                Debug.LogError("[Env] Missing PerAgentState5DSensor on Epuck prefab! Please add it to the prefab.");
+            }
+            else
+            {
+                s5.sensorName   = "state5d";
+                s5.arenaCenter  = (arenaParent != null) ? arenaParent.transform : null;
+                s5.arenaRadius  = Mathf.Max(spawnAreaSize.x, spawnAreaSize.z) * 0.5f;
+                s5.trainingOnly = true;         // you can temporarily set false to force it ON
+                s5.verbose      = true;
+                s5.printEveryNSteps = 120;
+            }
+
+            if (agentsList.Count == numberOfAgents)
+            {
+                string centerStr = (s5.arenaCenter != null)
+                    ? s5.arenaCenter.position.ToString("F2")
+                    : "(null -> using (0,0,0))";
+                Debug.Log($"[Env] PerAgentState5DSensor attached to {agentsList.Count} agents. " +
+                        $"center={centerStr}, radius={s5.arenaRadius:F2}, name='{s5.sensorName}'");
+            }
         }
 
         ResetEnvironment();
@@ -71,7 +94,7 @@ public class DirectionalGateEnvController : MonoBehaviour
                 blackToWhiteCount++;
                 agentGroup.AddGroupReward(1.0f); // Reward for correct traversal
                 cumulReward += 1.0f;
-                //Debug.Log($"Reward: " + cumulReward);
+                Debug.Log($"Reward: " + cumulReward);
                 //  Debug.Log($"Robot transitioned BLACK -> WHITE");
             }
             else if (agent.PreviousGroundColor == "white" && agent.CurrentGroundColor == "black")
@@ -79,7 +102,7 @@ public class DirectionalGateEnvController : MonoBehaviour
                 whiteToBlackCount++;
                 agentGroup.AddGroupReward(-1.0f); // Penalize reverse traversal
                 cumulReward -= 1.0f;
-                //Debug.Log($"Reward: " + cumulReward);
+                Debug.Log($"Reward: " + cumulReward);
                 //  Debug.Log($"Robot transitioned WHITE -> BLACK");
             }
             else if (agent.PreviousGroundColor == "grey" && agent.CurrentGroundColor == "black")
@@ -147,37 +170,11 @@ public class DirectionalGateEnvController : MonoBehaviour
 
     Vector3 GetRandomSpawnPos()
     {
-        Vector3 spawnPos;
-        int maxAttempts = 100;
-        int attempts = 0;
-
-        do
-        {
-            // Generate a random position within the rectangular area
-            Vector3 randomPos = new Vector3(
-                Random.Range(-spawnAreaSize.x / 2f, spawnAreaSize.x / 2f),
-                0.5f, // Assuming agents are positioned slightly above the ground
-                Random.Range(-spawnAreaSize.z / 2f, spawnAreaSize.z / 2f)
-            );
-            spawnPos = spawnAreaCenter + randomPos;
-
-            // Check if the position is within the dodecagonal arena
-            attempts++;
-        } while (!IsInsideDodecagon(spawnPos, arenaRadius) && attempts < maxAttempts);
-
-        if (attempts >= maxAttempts)
-        {
-            Debug.LogWarning("Failed to find a valid spawn position after maximum attempts.");
-        }
-
-        return spawnPos;
-    }
-
-    bool IsInsideDodecagon(Vector3 position, float radius)
-    {
-        // Check if the position is within a circular approximation of the dodecagon
-        Vector3 centerToPosition = position - spawnAreaCenter;
-        float distance = new Vector2(centerToPosition.x, centerToPosition.z).magnitude;
-        return distance <= radius;
+        Vector3 randomPos = new Vector3(
+            Random.Range(-spawnAreaSize.x / 2f, spawnAreaSize.x / 2f),
+            0.5f, // Assuming agents are positioned slightly above the ground
+            Random.Range(-spawnAreaSize.z / 2f, spawnAreaSize.z / 2f)
+        );
+        return spawnAreaCenter + randomPos;
     }
 }

@@ -73,7 +73,6 @@ public class ForagingEnvController : MonoBehaviour
         // End episode if max steps are reached
         if (stepCounter >= MaxEnvironmentSteps)
         {
-            Debug.Log($"Reward: " + cumulReward);
             agentGroup.GroupEpisodeInterrupted();
             ResetEnvironment();
             simCounter++;

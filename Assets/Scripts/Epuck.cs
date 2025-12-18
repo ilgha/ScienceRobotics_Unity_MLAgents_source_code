@@ -598,8 +598,6 @@ public class Epuck : Agent
             float ztilde = GetZtilde(NumberNeighbors);
             sensor.AddObservation(ztilde);
         }
-
-        if(debugSensors) DebugSensors();
     }
  
     // -------------------------------------------------------------
@@ -639,7 +637,6 @@ public class Epuck : Agent
         {
             // ONE discrete action in [0..5], corresponding to your 6 behaviors
             int action = actions.DiscreteActions[0];
-            // Debug.Log("Action: " + action);
             switch (action)
             {
                 case 0: AutoMoDeStop();                      break;
@@ -723,6 +720,8 @@ public class Epuck : Agent
         }
 
         UpdateGroundColor();
+
+        if(debugSensors) DebugSensors();
     }
  
     bool IsPositionClear(Vector3 position)
@@ -897,46 +896,59 @@ public class Epuck : Agent
         return rawIntensity;
     }
  
-    // 3) GROUND
+    // 3) GROUND — tag-based (headless-safe)
     void UpdateGroundSensor()
     {
-        groundSensor[0] = 0;
-        groundSensor[1] = 0;
-        groundSensor[2] = 0;
-    
+        // Reset channels
+        groundSensor[0] = 0f;
+        groundSensor[1] = 0f;
+        groundSensor[2] = 0f;
+
+        // Raycast straight down to find the tile under the robot
         Ray ray = new Ray(transform.position, -transform.up);
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
         {
-            Renderer hitRenderer = hit.collider.GetComponent<Renderer>();
-            if (hitRenderer != null)
+            // Decide color by tag on the collider we hit.
+            // Expected tags: "black", "white", "grey"
+            // Map to the same values you were using before.
+            if (hit.collider.CompareTag("black"))
             {
-                float grayscale = hitRenderer.material.color.grayscale;
-    
-                if (enableNoise && groundNoiseLevel > 0f)
-                {
-                    float noise = UniformNoise(groundNoiseLevel);
-                    grayscale = Mathf.Clamp(grayscale + noise, 0f, 1f);
-                }
-    
-                if (grayscale < 0.3f)
-                {      
-                    groundSensor[0] = 0f;
-                    groundSensor[1] = 0f;
-                    groundSensor[2] = 0f;   
-                }
-                else if (grayscale > 0.7f)
-                { 
-                    groundSensor[0] = 1f;
-                    groundSensor[1] = 1f;
-                    groundSensor[2] = 1f;
-                }
-                else
-                {                       
-                    groundSensor[0] = .5f;
-                    groundSensor[1] = .5f;
-                    groundSensor[2] = .5f;
-                }
+                // You previously had (0,0,0) for black
+                groundSensor[0] = 0f;
+                groundSensor[1] = 0f;
+                groundSensor[2] = 0f;
             }
+            else if (hit.collider.CompareTag("white"))
+            {
+                // You previously had (1,1,1) for white
+                groundSensor[0] = 1f;
+                groundSensor[1] = 1f;
+                groundSensor[2] = 1f;
+            }
+            else if (hit.collider.CompareTag("grey"))
+            {
+                // You previously had (0.5,0.5,0.5) for grey
+                groundSensor[0] = 0.5f;
+                groundSensor[1] = 0.5f;
+                groundSensor[2] = 0.5f;
+            }
+            else
+            {
+                // Fallback if no expected tag: treat as grey
+                groundSensor[0] = 0.5f;
+                groundSensor[1] = 0.5f;
+                groundSensor[2] = 0.5f;
+            }
+
+            // Optional: keep your noise behavior but apply it *after* tagging.
+            // This simulates sensor noise without requiring rendering.
+            // if (enableNoise && groundNoiseLevel > 0f)
+            // {
+            //     for (int i = 0; i < 3; i++)
+            //     {
+            //         groundSensor[i] = Mathf.Clamp01(groundSensor[i] + UniformNoise(groundNoiseLevel));
+            //     }
+            // }
         }
     }
  
@@ -1124,17 +1136,17 @@ public class Epuck : Agent
         var debugParts = new List<string>();
 
         // 2a) Proximity
-        // for (int i = 0; i < 8; i++)
-        // {
-        //     debugParts.Add($"prox{i}={evoInputs[i]:F2}");
-        // }
+        for (int i = 0; i < 8; i++)
+        {
+            debugParts.Add($"prox{i}={evoInputs[i]:F2}");
+        }
 
-        // // 2b) Light
-        // for (int i = 8; i < 16; i++)
-        // {
-        //     int li = i - 8;
-        //     debugParts.Add($"light{li}={evoInputs[i]:F2}");
-        // }
+        // 2b) Light
+        for (int i = 8; i < 16; i++)
+        {
+            int li = i - 8;
+            debugParts.Add($"light{li}={evoInputs[i]:F2}");
+        }
 
         // 2c) Ground
         debugParts.Add($"ground0={evoInputs[16]:F2}");
@@ -1145,10 +1157,10 @@ public class Epuck : Agent
         debugParts.Add($"ztilde={evoInputs[19]:F2}");
 
         // 2e) 4 RAB projections
-        // debugParts.Add($"rab45={evoInputs[20]:F2}");
-        // debugParts.Add($"rab135={evoInputs[21]:F2}");
-        // debugParts.Add($"rab225={evoInputs[22]:F2}");
-        // debugParts.Add($"rab315={evoInputs[23]:F2}");
+        debugParts.Add($"rab45={evoInputs[20]:F2}");
+        debugParts.Add($"rab135={evoInputs[21]:F2}");
+        debugParts.Add($"rab225={evoInputs[22]:F2}");
+        debugParts.Add($"rab315={evoInputs[23]:F2}");
 
         // 3) Join them into a single line
         string debugLine = string.Join(", ", debugParts);

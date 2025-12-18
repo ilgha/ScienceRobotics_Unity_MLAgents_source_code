@@ -66,7 +66,6 @@ public class ShelterEnvController : MonoBehaviour
         // End episode if max steps are reached
         if (stepCounter >= MaxEnvironmentSteps)
         {
-            Debug.Log("score: " + cumulReward);
             agentGroup.GroupEpisodeInterrupted();
             ResetEnvironment();
             simCounter++;
